@@ -2,11 +2,11 @@
 export CUDA_VISIBLE_DEVICES=1
 
 seq_len=336
-model=GPT4TS
+model=MultiModelTS
 
 for percent in 100
 do
-for pred_len in 96 192 336 720
+for pred_len in 96
 do
 for lr in 0.0001
 do
@@ -14,13 +14,13 @@ do
 python main.py \
     --root_path /dev_data/hh/multimodel/NeurIPS2023-One-Fits-All/datasets/ETT-small \
     --data_path ETTh1.csv \
-    --model_id ETTh1_$model'_'$gpt_layer'_'$seq_len'_'$pred_len'_'$percent \
+    --model_id ETTh1_$model'_'$model_layer'_'$seq_len'_'$pred_len'_'$percent \
     --base_model gpt2 \
     --data ett_h \
     --seq_len $seq_len \
     --label_len 168 \
     --pred_len $pred_len \
-    --batch_size 256 \
+    --batch_size 128 \
     --lradj type4 \
     --learning_rate $lr \
     --train_epochs 10 \
@@ -35,12 +35,13 @@ python main.py \
     --patch_size 16 \
     --stride 8 \
     --percent $percent \
-    --gpt_layer -6 \
+    --model_layer 6 \
     --itr 1 \
     --model $model \
     --tmax 20 \
     --cos 1 \
-    --is_gpt 1
+    --is_gpt 1 \
+    --base_model /dev_data/hh/model/Qwen2.5-0.5B
 
 done
 done

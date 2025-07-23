@@ -49,7 +49,7 @@ class GPT4TS(nn.Module):
             seq_len=336,
             pred_len=96,
             d_model=768,
-            gpt_layers=6,
+            model_layers=6,
             freeze=True
         )
         
@@ -78,7 +78,7 @@ class GPT4TS(nn.Module):
                 seq_len (int): 输入序列长度
                 pred_len (int): 预测长度
                 d_model (int): GPT-2 的隐藏维度
-                gpt_layers (int): 使用的 GPT-2 层数
+                model_layers (int): 使用的 GPT-2 层数
                 freeze (bool): 是否冻结 GPT-2 的部分参数
             device (torch.device): 运行设备 (CPU/GPU)
         """
@@ -109,16 +109,16 @@ class GPT4TS(nn.Module):
                 # 使用随机初始化的 GPT-2 配置
                 self.gpt2 = GPT2Model(GPT2Config())
             
-            # (5) 根据 gpt_layers 的正负决定保留哪些 Transformer 层
-            # 正数: 保留前 gpt_layers 层；负数: 保留最后 |gpt_layers| 层
-            if configs.gpt_layers >= 0:
-                # (5.1) 保留前 gpt_layers 层
-                self.gpt2.h = self.gpt2.h[:configs.gpt_layers]
-                # 形状变化: [全部层] -> [前 gpt_layers 层]
+            # (5) 根据 model_layers 的正负决定保留哪些 Transformer 层
+            # 正数: 保留前 model_layers 层；负数: 保留最后 |model_layers| 层
+            if configs.model_layers >= 0:
+                # (5.1) 保留前 model_layers 层
+                self.gpt2.h = self.gpt2.h[:configs.model_layers]
+                # 形状变化: [全部层] -> [前 model_layers 层]
             else:
-                # (5.2) 保留最后 |gpt_layers| 层
-                self.gpt2.h = self.gpt2.h[configs.gpt_layers:]
-                # 形状变化: [全部层] -> [后 |gpt_layers| 层]
+                # (5.2) 保留最后 |model_layers| 层
+                self.gpt2.h = self.gpt2.h[configs.model_layers:]
+                # 形状变化: [全部层] -> [后 |model_layers| 层]
             print("gpt2 = {}".format(self.gpt2))
         
         # (6) 创建输入投影层：patch_size -> d_model

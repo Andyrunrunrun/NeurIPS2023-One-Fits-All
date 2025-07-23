@@ -46,9 +46,9 @@ class MultiModelTS(nn.Module):
         
         # 配置参数 - 使用本地模型
         configs = SimpleNamespace(
-            model_name_or_path='/path/to/local/model',  # 本地模型路径
+            base_model='/path/to/local/model',  # 本地模型路径
             # 或者使用 Hub 模型名称
-            # model_name_or_path='bert-base-uncased',
+            # base_model='bert-base-uncased',
             patch_size=16,
             stride=8,
             seq_len=336,
@@ -77,7 +77,7 @@ class MultiModelTS(nn.Module):
         
         Args:
             configs: 模型配置对象，包含以下属性:
-                model_name_or_path (str): 模型名称或本地路径
+                base_model (str): 模型名称或本地路径
                 patch_size (int): 每个 patch 的大小（时间步数）
                 stride (int): patch 分割时的步长
                 seq_len (int): 输入序列长度
@@ -92,7 +92,7 @@ class MultiModelTS(nn.Module):
         super(MultiModelTS, self).__init__()
         
         # (1) 保存核心配置参数
-        self.model_name_or_path = configs.model_name_or_path
+        self.base_model = configs.base_model
         self.patch_size = configs.patch_size
         self.stride = configs.stride
         
@@ -143,7 +143,7 @@ class MultiModelTS(nn.Module):
         Returns:
             torch.nn.Module: 加载的预训练模型
         """
-        print(f"🔄 正在加载模型: {configs.model_name_or_path}")
+        print(f"🔄 正在加载模型: {configs.base_model}")
         
         try:
             # 准备加载参数
@@ -152,26 +152,21 @@ class MultiModelTS(nn.Module):
                 'output_hidden_states': True,
             }
             
-            # 添加可选参数
-            if hasattr(configs, 'trust_remote_code') and configs.trust_remote_code:
-                load_kwargs['trust_remote_code'] = True
-                
-            if hasattr(configs, 'use_auth_token') and configs.use_auth_token:
-                load_kwargs['use_auth_token'] = configs.use_auth_token
+            load_kwargs['trust_remote_code'] = True
             
             # 尝试加载模型
             model = AutoModel.from_pretrained(
-                configs.model_name_or_path,
+                configs.base_model,
                 **load_kwargs
             )
             
-            print(f"✅ 成功加载模型: {configs.model_name_or_path}")
+            print(f"✅ 成功加载模型: {configs.base_model}")
             print(f"📊 模型类型: {model.__class__.__name__}")
             
             return model
             
         except Exception as e:
-            print(f"❌ 模型加载失败: {configs.model_name_or_path}")
+            print(f"❌ 模型加载失败: {configs.base_model}")
             print(f"错误信息: {str(e)}")
             print("💡 请检查模型路径是否正确，或者是否需要设置 trust_remote_code=True")
             raise e
@@ -224,34 +219,18 @@ class MultiModelTS(nn.Module):
         """
         print(f"🔧 限制模型层数为: {max_layers}")
         
-        # 尝试不同的层属性名称
-        layer_attrs = ['layers', 'layer', 'h', 'encoder.layer', 'transformer.h']
-        
-        for attr_path in layer_attrs:
-            try:
-                # 支持嵌套属性
-                obj = self.model
-                for attr in attr_path.split('.'):
-                    obj = getattr(obj, attr)
-                
-                if hasattr(obj, '__len__') and len(obj) > max_layers:
-                    # 截断层数
-                    if hasattr(obj, '__setitem__'):
-                        # 对于 ModuleList
-                        new_layers = obj[:max_layers]
-                        obj.clear()
-                        obj.extend(new_layers)
-                    else:
-                        # 对于其他类型，尝试直接赋值
-                        setattr(obj, attr_path.split('.')[-1], obj[:max_layers])
-                    
-                    print(f"✅ 成功限制 {attr_path} 层数: {len(obj)} -> {max_layers}")
-                    return
-                    
-            except (AttributeError, TypeError):
-                continue
-        
-        print("⚠️  无法限制模型层数，将使用完整模型")
+        if 'gpt2' in self.base_model:
+            self.model.h = self.model.h[:max_layers]
+        elif 'bert' in self.base_model:
+            self.model.encoder.layer = self.model.encoder.layer[:max_layers]
+        elif 'llama' in self.base_model:
+            self.model.layers = self.model.layers[:max_layers]
+        elif 'qwen' in self.base_model:
+            self.model.layers = self.model.layers[:max_layers]
+        else:
+            print("⚠️ 目前只支持gpt2,bert,llama,qwen等模型")
+    
+        print(f"✅ 成功限制模型层数: {max_layers}")
 
     def _apply_freeze_strategy(self):
         """应用通用的参数冻结策略
@@ -418,5 +397,3 @@ class MultiModelTS(nn.Module):
                 return x
 
 
-# 为了向后兼容，保留原始类名作为别名
-GPT4TS = MultiModelTS

@@ -4,7 +4,7 @@ from tqdm import tqdm
 from models.PatchTST import PatchTST
 from models.GPT4TS import GPT4TS
 from models.DLinear import DLinear
-# from models.MultiModelTS import MultiModelTS
+from models.MultiModelTS import MultiModelTS
 
 import numpy as np
 import torch
@@ -52,7 +52,7 @@ def save_results_to_csv(args, results_list, final_stats, filename=None):
         'd_model': args.d_model,
         'n_heads': args.n_heads,
         'e_layers': args.e_layers,
-        'gpt_layers': args.gpt_layers,
+        'model_layers': args.model_layers,
         'd_ff': args.d_ff,
         'dropout': args.dropout,
         'patch_size': args.patch_size,
@@ -193,7 +193,7 @@ parser.add_argument('--train_epochs', type=int, default=10)
 parser.add_argument('--lradj', type=str, default='type1')
 parser.add_argument('--patience', type=int, default=3)
 
-parser.add_argument('--gpt_layers', type=int, default=3)
+parser.add_argument('--model_layers', type=int, default=3)
 parser.add_argument('--is_gpt', type=int, default=1)
 parser.add_argument('--e_layers', type=int, default=3)
 parser.add_argument('--d_model', type=int, default=768)
@@ -240,7 +240,7 @@ results_list = []  # 存储每次迭代的详细结果
 for ii in range(args.itr):
 
     setting = '{}_sl{}_ll{}_pl{}_dm{}_nh{}_el{}_gl{}_df{}_eb{}_itr{}'.format(args.model_id, 336, args.label_len, args.pred_len,
-                                                                    args.d_model, args.n_heads, args.e_layers, args.gpt_layers, 
+                                                                    args.d_model, args.n_heads, args.e_layers, args.model_layers, 
                                                                     args.d_ff, args.embed, ii)
     path = os.path.join(args.checkpoints, setting)
     if not os.path.exists(path):
@@ -269,8 +269,10 @@ for ii in range(args.itr):
     elif args.model == 'DLinear':
         model = DLinear(args, device)
         model.to(device)
-    else:
+    elif args.model == 'GPT4TS':
         model = GPT4TS(args, device)
+    elif args.model == 'MultiModelTS':
+        model = MultiModelTS(args, device)
     # mse, mae = test(model, test_data, test_loader, args, device, ii)
 
     params = model.parameters()
