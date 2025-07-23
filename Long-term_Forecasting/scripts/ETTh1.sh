@@ -1,5 +1,5 @@
 
-export CUDA_VISIBLE_DEVICES=0
+export CUDA_VISIBLE_DEVICES=1
 
 seq_len=336
 model=GPT4TS
@@ -12,9 +12,10 @@ for lr in 0.0001
 do
 
 python main.py \
-    --root_path ./datasets/ETT-small/ \
+    --root_path /dev_data/hh/multimodel/NeurIPS2023-One-Fits-All/datasets/ETT-small \
     --data_path ETTh1.csv \
     --model_id ETTh1_$model'_'$gpt_layer'_'$seq_len'_'$pred_len'_'$percent \
+    --base_model gpt2 \
     --data ett_h \
     --seq_len $seq_len \
     --label_len 168 \
@@ -34,8 +35,8 @@ python main.py \
     --patch_size 16 \
     --stride 8 \
     --percent $percent \
-    --gpt_layer 6 \
-    --itr 3 \
+    --gpt_layer -6 \
+    --itr 1 \
     --model $model \
     --tmax 20 \
     --cos 1 \
