@@ -223,12 +223,13 @@ class MultiModelTS(nn.Module):
             self.model.h = self.model.h[:max_layers]
         elif 'bert' in self.base_model:
             self.model.encoder.layer = self.model.encoder.layer[:max_layers]
-        elif 'llama' in self.base_model:
+        elif 'llama' or 'Llama' in self.base_model:
             self.model.layers = self.model.layers[:max_layers]
-        elif 'qwen' in self.base_model:
+        elif 'qwen' or 'Qwen' in self.base_model:
             self.model.layers = self.model.layers[:max_layers]
         else:
             print("⚠️ 目前只支持gpt2,bert,llama,qwen等模型")
+            return
     
         print(f"✅ 成功限制模型层数: {max_layers}")
 
