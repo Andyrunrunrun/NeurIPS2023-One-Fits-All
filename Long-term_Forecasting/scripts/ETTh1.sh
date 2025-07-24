@@ -20,7 +20,7 @@ python main.py \
     --seq_len $seq_len \
     --label_len 168 \
     --pred_len $pred_len \
-    --batch_size 256 \
+    --batch_size 128 \
     --lradj type4 \
     --learning_rate $lr \
     --train_epochs 10 \
